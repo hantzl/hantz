@@ -198,7 +198,83 @@ namespace HD.Helper.Common
                 sendOK = false;
             }
             return str;
-        } 
+        }
         #endregion
+
+        public class SendMailEx
+        {
+            public SendMailEx()
+            {
+                SmtpClient smtp = new SmtpClient();
+                smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
+                smtp.Host = "smtp.163.com";
+                smtp.Credentials = new NetworkCredential("outofmemory", "**");
+                MailMessage mm = new MailMessage();
+                mm.From = new MailAddress("outofmemory@163.com", "无敌outofmemory测试");
+                mm.To.Add("outofmemory@vip.qq.com");
+                mm.Subject = "发送带图片邮件";
+                string plainTextBody = "如果你邮件客户端不支持HTML格式，或者你切换到“普通文本”视图，将看到此内容";
+                mm.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(plainTextBody, null, "text/plain"));
+                ////HTML格式邮件的内容
+                string htmlBodyContent = "如果你的看到<b>这个</b>， 说明你是在以 <span style=\"color:red\">HTML</span> 格式查看邮件<br><br>";
+                htmlBodyContent += "<a href=\"http://outofmemory.cn/\">为程序员服务</a> <img src=\"cid:weblogo\">";   //注意此处嵌入的图片资源
+                AlternateView htmlBody = AlternateView.CreateAlternateViewFromString(htmlBodyContent, null, "text/html");
+                LinkedResource lrImage = new LinkedResource(@"d:\1.jpg", "image/gif");
+                lrImage.ContentId = "weblogo"; //此处的ContentId 对应 htmlBodyContent 内容中的 cid: ，如果设置不正确，请不会显示图片
+                htmlBody.LinkedResources.Add(lrImage);
+                mm.AlternateViews.Add(htmlBody);
+                ////要求回执的标志
+                mm.Headers.Add("Disposition-Notification-To", "abc@163.com");
+                ////自定义邮件头
+                mm.Headers.Add("X-Website", "http://outofmemory.cn/");
+                ////针对 LOTUS DOMINO SERVER，插入回执头
+                mm.Headers.Add("ReturnReceipt", "1");
+                mm.Priority = MailPriority.Normal; //优先级
+                mm.ReplyToList.Add(new MailAddress("outofmemory@163.com", "我自己"));
+                ////如果发送失败，SMTP 服务器将发送 失败邮件告诉我
+                mm.DeliveryNotificationOptions = DeliveryNotificationOptions.OnFailure;
+                ////异步发送完成时的处理事件
+                smtp.SendCompleted += new SendCompletedEventHandler(smtp_SendCompleted);
+                ////开始异步发送
+                smtp.SendAsync(mm, null);
+            }
+            void smtp_SendCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
+            {
+                if (e.Cancelled)
+
+                {
+
+                    MailErr erro = new MailErr() { state = "Erro", massge = "发送取消！" };
+
+                }
+
+                else
+
+                {
+
+                    if (e.Error == null)
+
+                    {
+
+                        MailErr erro = new MailErr() { state = "OK", massge = "发送成功！" };
+
+                    }
+
+                    else
+
+                    {
+                        MailErr erro = new MailErr() { state = "Erro", code = 205404, massge = e.Error.Message };
+                    }
+
+                }
+
+            }
+            class MailErr
+            {
+                public string state { get; set; }
+                public int code { get; set; }
+                public string massge { get; set; }
+            }
+        }
     }
 }
